@@ -1,0 +1,7 @@
+aiohttp
+bs4
+fastapi
+lxml
+mangum
+iso8601
+python-dotenv

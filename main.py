@@ -1,74 +1,88 @@
 import asyncio
-from dataclasses import dataclass, field
-from typing import *
 
-from aiohttp import ClientSession
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 from mangum import Mangum
-from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
-from pydantic import BaseModel, Field
 
-Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
-Headers = Union[CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy, Dict[str, str]]
-Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
-
-@dataclass
-class ApiClient:
-    base_url: str   
-    headers: Headers = field(default_factory=dict)
-    
-    async def fetch(self, method: Method, url: str, headers: Headers = {}, json: Json = None):
-        async with ClientSession(base_url=self.base_url, headers=self.headers) as session:
-            async with session.request(method, url, headers=headers, json=json) as resp:
-                return await resp.json()
-            
-    async def get(self, url: str, headers: Headers = {}):
-        return await self.request("GET", url, headers=headers)
-    
-    async def post(self, url: str, headers: Headers = {}, json: Json = None):
-        return await self.request("POST", url, headers=headers, json=json)
-    
-    async def put(self, url: str, headers: Headers = {}, json: Json = None):
-        return await self.request("PUT", url, headers=headers, json=json)
-    
-    async def delete(self, url: str, headers: Headers = {}, json: Json = None):
-        return await self.request("DELETE", url, headers=headers, json=json)
-    
-    async def patch(self, url: str, headers: Headers = {}, json: Json = None):
-        return await self.request("PATCH", url, headers=headers, json=json)
-    
-    async def text(self, url: str, method: Method="GET", headers: Headers = {}, json: Json = None):
-        async with ClientSession(base_url=self.base_url, headers=self.headers) as session:
-            async with session.request(method, url, headers=headers, json=json) as resp:
-                return await resp.text()
-            
-    async def stream(self, url: str, method: Method="GET", headers: Headers = {}, json: Json = None):
-        async with ClientSession(base_url=self.base_url, headers=self.headers) as session:
-            async with session.request(method, url, headers=headers, json=json) as resp:
-                async for data in resp.content.iter_chunked(1024):
-                    yield data.decode("utf-8")
-                
-    async def blob(self, url: str, method: Method="GET", headers: Headers = {}, json: Json = None):
-        async with ClientSession(base_url=self.base_url) as session:
-            async with session.request(method, url, headers=headers, json=json) as resp:
-                return await resp.read()
-            
-    
-
+from src.handlers import app as api
+from src.openai import *
+from src.pinecone import *
+from src.tools.sitemap import SiteMapTool
 
 app = FastAPI()
 
-def url_get(i:int)->str:
-    return f"https://jsonplaceholder.typicode.com/todos/{i}"
+pinecone = PineConeClient()
+openai = OpenAIClient()
+tool = SiteMapTool()
+    
 
-async def get(url:str):
-    async with ClientSession() as session:
-        async with session.get(url) as resp:
-            return await resp.json()
+@app.post("/")
+async def main(request: OpenAIEmbeddingRequest):
+    vector = (await openai.post_embeddings(request)).data[0].embedding
+    ctx = await pinecone.get_context(
+        namespace=request.namespace, vector=vector, text=request.input
+    )
+    await pinecone.upsert(
+        PineconeVectorUpsert(
+            namespace=request.namespace,
+            vectors=[PineconeVector(values=vector)],
+            metadata={"text": request.input},
+        )
+    )
+    req = OpenAIChatCompletionRequest(
+        prompt=request.input,
+        namespace=request.namespace,
+        context=ctx,
+        role="lead-generation-machine",
+    )
+    content = req.chain()
+    gpt_request = OpenAIChatGptRequest().chain(content, request.input)
+    response = await openai.text_completion(gpt_request)
+    text = response.choices[0].message.content
+    vector = (
+        (
+            await openai.post_embeddings(
+                OpenAIEmbeddingRequest(input=text, namespace=request.namespace)
+            )
+        )
+        .data[0]
+        .embedding
+    )
+    await pinecone.upsert(
+        PineconeVectorUpsert(
+            namespace=request.namespace,
+            vectors=[PineconeVector(values=[])],
+            metadata={"text": text},
+        )
+    )
+    return PlainTextResponse(text)
+
 
 @app.get("/")
-async def read_root():
-   
-    return await asyncio.gather(*[get(url_get(i)) for i in range(1, 100)])
+async def main_(namespace:str):
+    pages = await tool.run(namespace)
+    requests = [
+        OpenAIEmbeddingRequest(input=page.content, namespace=namespace) for page in pages
+    ]
+    responses = await asyncio.gather(*[openai.post_embeddings(req) for req in requests])
+    vectors = [res.data[0].embedding for res in responses]
+    await asyncio.gather(
+        *[
+            pinecone.upsert(
+                PineconeVectorUpsert(
+                    namespace=namespace,
+                    vectors=[PineconeVector(values=vector)],
+                    metadata={"text": page.content, "url": page.url},
+                )
+            )
+            for page, vector in zip(pages, vectors)
+        ]
+    )
+    return pages
+
+
+
+app.include_router(api, prefix="/api")
+
 
 handler = Mangum(app)
