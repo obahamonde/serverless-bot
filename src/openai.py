@@ -318,7 +318,6 @@ class OpenAIClient(ApiClient):
             "https://api.openai.com/v1/embeddings", "POST", headers, request.dict()
         )
         assert isinstance(response, dict)
-        print(response)
         return OpenAIEmbeddingResponse(**response)
 
     async def retrieve_context(self, request: OpenAIEmbeddingRequest):

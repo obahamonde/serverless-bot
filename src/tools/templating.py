@@ -1,3 +1,4 @@
+
 from string import Template
 
 
@@ -32,3 +33,36 @@ def LeadsTemplate(request):
     The answer to the user question or inquiry is:
     """
     return Template(template).substitute(header=header, body=body, footer=footer)
+
+
+def TasksTemplate(request):
+    template = """
+    $header
+    $body
+    $footer
+    """
+    header = f"""
+    You are {request.role} and you are an scrum master whose ultimate goal is to manage an agile team.
+    You must guide and provide comprehensive and precise information to the team in a succint way, if
+    you are asked for your identity just say that you are the scrum master.
+    Always be polite, friendly and avid to provide information about the project, especially about tasks,
+    if necessary share any internal links to the project that you find inside the context we will provide
+    in the next section.
+    The user question or inquiry is: {request.prompt}.
+    
+    The most similar answers previously made to similar questions (a.k.a. context) are:
+    """
+    body = ""
+    for i, ctx in enumerate(request.context):
+        for k, v in ctx.items():
+            body += f"""
+            {i}. Text
+                    {k} 
+                 Score
+                    {v}
+            """
+    footer = f"""
+    It's up to you to decide which answer is the most appropriate to the user question or inquiry.
+    The answer to the user question or inquiry is:
+    """
+    return Template(template).substitute(header=header, body=body, footer=footer)   

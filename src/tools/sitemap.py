@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel, Field
 
 
+
 class Page(BaseModel):
     title: str = Field(..., description="Title of the page")
     url: str = Field(..., description="Url of the page")

@@ -1,3 +1,5 @@
+
+
 from .config import *
 from .lib import *
 from .models import *
@@ -111,7 +113,8 @@ class PineconeVectorMatch(BaseModel):
     sparseValues: Optional[PineConeSparsedValues] = Field(
         None, description="The sparse values of the embedding."
     )
-    metadata: Context = Field(..., description="The metadata of the embedding.")
+    metadata: Optional[Context] = Field(default=None,
+                                        description="The metadata of the embedding.")
 
 
 class PineconeVectorResponse(BaseModel):
