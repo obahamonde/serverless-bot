@@ -2,11 +2,26 @@ from starlette.background import P
 
 from .typedefs import *
 
-LeadSource = Literal["website", "email", "phone", "chat", "facebook", "twitter", "linkedin", "instagram", "youtube", "whatsapp", "other"]
-LeadStatus = Literal["new", "contacted", "qualified", "unqualified", "converted", "rejected", "other"]
+LeadSource = Literal[
+    "website",
+    "email",
+    "phone",
+    "chat",
+    "facebook",
+    "twitter",
+    "linkedin",
+    "instagram",
+    "youtube",
+    "whatsapp",
+    "other",
+]
+LeadStatus = Literal[
+    "new", "contacted", "qualified", "unqualified", "converted", "rejected", "other"
+]
 ProductType = Literal["service", "product", "subscription", "other"]
 PaymentMethod = Literal["cash", "card", "bank", "paypal", "stripe", "other"]
 DealStatus = Literal["proposal", "negotiation", "won", "lost", "other"]
+
 
 class User(FaunaModel):
     """
@@ -47,94 +62,102 @@ class Upload(FaunaModel):
 
 
 class Lead(FaunaModel):
-    email:str = Field(...)
-    name:str = Field(...)
-    phone:Optional[str] = Field(default=None)
-    message:Optional[str] = Field(default=None)
-    source:LeadSource = Field(default="website")
-    status:LeadStatus = Field(default="new")
-    attachments:Optional[List[Upload]] = Field(default=None)
-    user:Optional[User] = Field(default=None)
-    
+    email: str = Field(...)
+    name: str = Field(...)
+    phone: Optional[str] = Field(default=None)
+    message: Optional[str] = Field(default=None)
+    source: LeadSource = Field(default="website")
+    status: LeadStatus = Field(default="new")
+    attachments: Optional[List[Upload]] = Field(default=None)
+    user: Optional[User] = Field(default=None)
 
-    
+
 class Product(FaunaModel):
-    name:str = Field(...)
-    description:Optional[str] = Field(default=None)
-    price:Optional[float] = Field(default=None)
-    type:ProductType = Field(default="product")
-    media:Optional[List[Upload]] = Field(default=None)
-    user:Optional[User] = Field(default=None)
-    
+    name: str = Field(...)
+    description: Optional[str] = Field(default=None)
+    price: Optional[float] = Field(default=None)
+    type: ProductType = Field(default="product")
+    media: Optional[List[Upload]] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+
 
 class Deal(FaunaModel):
-    payment_method:PaymentMethod = Field(default="cash")
-    product:Product = Field(...)
-    lead:str = Field(...)
-    owner:str=Field(...)
-    status:DealStatus = Field(default="proposal")
-    attachments:Optional[List[Upload]] = Field(default=None)
-    size:Optional[float] = Field(default=None)
-    profit:Optional[float] = Field(default=None)
-    expected_close_date:Optional[str] = Field(default=None)
+    payment_method: PaymentMethod = Field(default="cash")
+    product: Product = Field(...)
+    lead: str = Field(...)
+    owner: str = Field(...)
+    status: DealStatus = Field(default="proposal")
+    attachments: Optional[List[Upload]] = Field(default=None)
+    size: Optional[float] = Field(default=None)
+    profit: Optional[float] = Field(default=None)
+    expected_close_date: Optional[str] = Field(default=None)
+
 
 class Payment(FaunaModel):
-    deal:Deal = Field(...)
-    amount:float = Field(...)
-    method:PaymentMethod = Field(default="cash")
-    date:str = Field(...)
-    attachments:Optional[List[Upload]] = Field(default=None)
-    user:Optional[User] = Field(default=None)
+    deal: Deal = Field(...)
+    amount: float = Field(...)
+    method: PaymentMethod = Field(default="cash")
+    date: str = Field(...)
+    attachments: Optional[List[Upload]] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+
 
 class Task(FaunaModel):
-    deal:Deal = Field(...)
-    name:str = Field(...)
-    description:Optional[str] = Field(default=None)
-    due_date:Optional[str] = Field(default=None)
-    attachments:Optional[List[Upload]] = Field(default=None)
-    user:Optional[User] = Field(default=None)
-    
+    deal: Deal = Field(...)
+    name: str = Field(...)
+    description: Optional[str] = Field(default=None)
+    due_date: Optional[str] = Field(default=None)
+    attachments: Optional[List[Upload]] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+
+
 class Note(FaunaModel):
-    deal:Deal = Field(...)
-    name:str = Field(...)
-    description:Optional[str] = Field(default=None)
-    attachments:Optional[List[Upload]] = Field(default=None)
-    user:Optional[User] = Field(default=None)
-    
+    deal: Deal = Field(...)
+    name: str = Field(...)
+    description: Optional[str] = Field(default=None)
+    attachments: Optional[List[Upload]] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+
+
 class Comment(FaunaModel):
-    deal:Deal = Field(...)
-    name:str = Field(...)
-    description:Optional[str] = Field(default=None)
-    attachments:Optional[List[Upload]] = Field(default=None)
-    user:Optional[User] = Field(default=None)
-    
+    deal: Deal = Field(...)
+    name: str = Field(...)
+    description: Optional[str] = Field(default=None)
+    attachments: Optional[List[Upload]] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+
+
 class Event(FaunaModel):
-    deal:Deal = Field(...)
-    name:str = Field(...)
-    description:Optional[str] = Field(default=None)
-    attachments:Optional[List[Upload]] = Field(default=None)
-    user:Optional[User] = Field(default=None)
-    type:Literal["call", "meeting", "email", "other"] = Field(default="other")
-    date:str = Field(...)
-    duration:Optional[float] = Field(default=None)
-    location:Optional[str] = Field(default=None)
-    attendees:Optional[List[str]] = Field(default=None)
-    status:Literal["planned", "completed", "cancelled", "other"] = Field(default="planned")
+    deal: Deal = Field(...)
+    name: str = Field(...)
+    description: Optional[str] = Field(default=None)
+    attachments: Optional[List[Upload]] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+    type: Literal["call", "meeting", "email", "other"] = Field(default="other")
+    date: str = Field(...)
+    duration: Optional[float] = Field(default=None)
+    location: Optional[str] = Field(default=None)
+    attendees: Optional[List[str]] = Field(default=None)
+    status: Literal["planned", "completed", "cancelled", "other"] = Field(
+        default="planned"
+    )
 
 
 class LeadsReport(FaunaModel):
-    leads:List[Lead] = Field(...)
-    criteria:Literal["source", "status"] = Field(...)
-    
+    leads: List[Lead] = Field(...)
+    criteria: Literal["source", "status"] = Field(...)
+
+
 class DealsReport(FaunaModel):
-    deals:List[Deal] = Field(...)
-    criteria:Literal["status", "product", "payment_method"] = Field(...)
-    
+    deals: List[Deal] = Field(...)
+    criteria: Literal["status", "product", "payment_method"] = Field(...)
+
+
 class PaymentsReport(FaunaModel):
-    payments:List[Payment] = Field(...)
-    criteria:Literal["method", "date"] = Field(...)
-    
+    payments: List[Payment] = Field(...)
+    criteria: Literal["method", "date"] = Field(...)
+
+
 class TasksReport(FaunaModel):
-    tasks:List[Task] = Field(...)
-    criteria:Literal["due_date", "status"] = Field(...)
-    
+    tasks: List[Task] = Field(...)
+    criteria: Literal["due_date", "status"] = Field(...)

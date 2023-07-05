@@ -17,27 +17,19 @@ def bootstrap():
     pinecone = PineConeClient()
     openai = OpenAIClient()
     tool = SiteMapTool()
-        
+
     @app.middleware("http")
-    async def auth_middleware(request:Request, call_next:Callable)->Response:
+    async def auth_middleware(request: Request, call_next: Callable) -> Response:
         token = request.headers.get("Authorization", None)
         request.state.token = token
         response = await call_next(request)
-        return response 
-        
-        
+        return response
+
     @app.post("/api/chatbot")
     async def main(request: OpenAIEmbeddingRequest):
         vector = (await openai.post_embeddings(request)).data[0].embedding
         ctx = await pinecone.get_context(
             namespace=request.namespace, vector=vector, text=request.input
-        )            
-        await pinecone.upsert(
-            PineconeVectorUpsert(
-                namespace=request.namespace,
-                vectors=[PineconeVector(values=vector, metadata={"text": request.input})],
-               
-            )
         )
         req = OpenAIChatCompletionRequest(
             prompt=request.input,
@@ -59,36 +51,36 @@ def bootstrap():
             .embedding
         )
         await pinecone.upsert(
-            PineconeVectorUpsert(
-                namespace=request.namespace,
-                vectors=[PineconeVector(values=vector, metadata={"text": text})],
-            )
+            request.namespace,
+            PineconeVector(
+                values=vector,
+                metadata={"text": text},
+            ),
         )
         return PlainTextResponse(text)
 
-
-    @app.get("/api/chatbot/ingest")
-    async def main_(namespace:str):
+    async def get_embeddings(namespace: str):
         pages = await tool.run(namespace)
         requests = [
-            OpenAIEmbeddingRequest(input=page.content, namespace=namespace) for page in pages
+            OpenAIEmbeddingRequest(input=page.content, namespace=namespace)
+            for page in pages
         ]
-        responses = await asyncio.gather(*[openai.post_embeddings(req) for req in requests])
-        vectors = [res.data[0].embedding for res in responses]
-        await asyncio.gather(
-            *[
-                pinecone.upsert(
-                    PineconeVectorUpsert(
-                        namespace=namespace,
-                        vectors=[PineconeVector(values=vector, metadata={"text": page.content})],
-                    )
-                )
-                for page, vector in zip(pages, vectors)
-            ]
+        responses: List[OpenAIEmbeddingResponse] = await asyncio.gather(
+            *[openai.post_embeddings(request) for request in requests]
         )
-        return pages
+        embeddings = [response.data[0].embedding for response in responses]
+        vectors = [
+            PineconeVector(values=vector, metadata={"text": page.content})
+            for vector, page in zip(embeddings, pages)
+        ]
+        return vectors
 
-
+    @app.get("/api/chatbot/ingest")
+    async def ingest(namespace: str):
+        vectors = await get_embeddings(namespace)
+        return await asyncio.gather(
+            *[pinecone.upsert(namespace, vector) for vector in vectors]
+        )
 
     app.include_router(api, prefix="/api")
     app.add_middleware(
@@ -97,5 +89,5 @@ def bootstrap():
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     return app

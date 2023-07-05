@@ -1,4 +1,3 @@
-
 from string import Template
 
 
@@ -65,4 +64,4 @@ def TasksTemplate(request):
     It's up to you to decide which answer is the most appropriate to the user question or inquiry.
     The answer to the user question or inquiry is:
     """
-    return Template(template).substitute(header=header, body=body, footer=footer)   
+    return Template(template).substitute(header=header, body=body, footer=footer)

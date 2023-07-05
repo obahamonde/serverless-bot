@@ -1,5 +1,3 @@
-
-
 from .config import *
 from .lib import *
 from .models import *
@@ -32,8 +30,6 @@ class PineconeVector(BaseModel):
         The ID of the embedding.
     values : Vector
         The values of the embedding.
-    sparseValues : Optional[PineConeSparsedValues]
-        The sparse values of the embedding.
     metadata : Metadata
         The metadata of the embedding. Must be a dictionary of strings.
     """
@@ -42,9 +38,6 @@ class PineconeVector(BaseModel):
         default_factory=lambda: str(uuid4()), description="The ID of the embedding."
     )
     values: Vector = Field(..., description="The values of the embedding.")
-    sparseValues: Optional[PineConeSparsedValues] = Field(
-        default_factory=list, description="The sparse values of the embedding."
-    )
     metadata: Context = Field(
         default_factory=dict,
         description="The metadata of the embedding. Must be a dictionary of strings.",
@@ -112,8 +105,7 @@ class PineconeVectorMatch(BaseModel):
     sparseValues: Optional[PineConeSparsedValues] = Field(
         None, description="The sparse values of the embedding."
     )
-    metadata: Context = Field(...,
-                                        description="The metadata of the embedding.")
+    metadata: Context = Field(..., description="The metadata of the embedding.")
 
 
 class PineconeVectorResponse(BaseModel):
@@ -162,12 +154,12 @@ class PineConeClient(ApiClient):
         This method sends a POST request to the "/query" endpoint of the Pinecone API and returns a `PineconeVectorResponse` object.
     """
 
-    async def upsert(self, request: PineconeVectorUpsert) -> None:
-        await self.fetch(
+    async def upsert(self, namespace: str, request: PineconeVector):
+        return await self.fetch(
             "https://langchain-8360578.svc.us-central1-gcp.pinecone.io/vectors/upsert",
             "POST",
             headers,
-            request.dict(),
+            json=PineconeVectorUpsert(namespace=namespace, vectors=[request]).dict(),
         )
 
     async def query(self, request: PineconeVectorQuery):
@@ -181,12 +173,9 @@ class PineConeClient(ApiClient):
         return PineconeVectorResponse(**response)
 
     async def get_context(self, namespace: str, text: str, vector: Vector):
-        query_ = PineconeVectorQuery(namespace=namespace, vector=vector)
-        upsert_ = PineconeVectorUpsert(
-            namespace=namespace,
-            vectors=[PineconeVector(values=vector, metadata={"text": text})]
-        )
-        query_response = await self.query(query_)
-        await self.upsert(upsert_)
-        vector_models = query_response.matches
-        return {ctx.metadata["text"]: f"Score {ctx.score}" for ctx in vector_models}
+        query_request = PineconeVectorQuery(namespace=namespace, vector=vector)
+        upsert_request = PineconeVector(id=text, values=vector, metadata={"text": text})
+        query_response = await self.query(query_request)
+        await self.upsert(namespace,upsert_request)
+        matches = query_response.matches
+        return {match.metadata["text"]: f"Score {match.score}" for match in matches}
