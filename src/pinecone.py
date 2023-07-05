@@ -67,7 +67,6 @@ class PineconeVectorUpsert(BaseModel):
     vectors: List[PineconeVector] = Field(
         ..., description="The vectors of the embedding."
     )
-    metadata: Context = Field(..., description="The metadata of the embedding.")
 
 
 class PineconeVectorQuery(BaseModel):
@@ -185,8 +184,7 @@ class PineConeClient(ApiClient):
         query_ = PineconeVectorQuery(namespace=namespace, vector=vector)
         upsert_ = PineconeVectorUpsert(
             namespace=namespace,
-            vectors=[PineconeVector(values=vector)],
-            metadata={"text": text},
+            vectors=[PineconeVector(values=vector, metadata={"text": text})]
         )
         query_response = await self.query(query_)
         await self.upsert(upsert_)
