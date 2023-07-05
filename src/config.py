@@ -15,5 +15,7 @@ class Env(BaseSettings):
     PINECONE_API_KEY: str = Data(..., env="PINECONE_API_KEY")
     PINECONE_API_URL: str = Data(..., env="PINECONE_API_URL")
 
+    def __init__(self):
+        super().__init__()
 
 env = Env()

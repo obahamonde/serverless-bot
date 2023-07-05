@@ -278,7 +278,7 @@ class OpenAIChatCompletionRequest(BaseModel):
         ..., description="The namespace of the website inside the Vector database"
     )
     prompt: str = Field(..., description="The prompt to send to the AI")
-    context: List[Context] = Field(..., description="The context to send to the AI")
+    context: Context = Field(..., description="The context to send to the AI")
     role: str = Field(..., description="The role that the chatbot should play")
 
     def chain(self):

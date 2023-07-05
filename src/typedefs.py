@@ -15,5 +15,5 @@ Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 
 Vector = List[float]
 Scalar = Union[float, int, str, bool]
-Context = Dict[str, Scalar]
+Context = Dict[str, str]
 Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]

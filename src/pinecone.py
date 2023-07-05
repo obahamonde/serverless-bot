@@ -112,7 +112,7 @@ class PineconeVectorMatch(BaseModel):
     sparseValues: Optional[PineConeSparsedValues] = Field(
         None, description="The sparse values of the embedding."
     )
-    metadata: Optional[Context] = Field(default=None,
+    metadata: Context = Field(...,
                                         description="The metadata of the embedding.")
 
 
@@ -164,7 +164,7 @@ class PineConeClient(ApiClient):
 
     async def upsert(self, request: PineconeVectorUpsert) -> None:
         await self.fetch(
-            "https://llmtoolmvp-8360578.svc.us-central1-gcp.pinecone.io/vectors/upsert",
+            "https://langchain-8360578.svc.us-central1-gcp.pinecone.io/vectors/upsert",
             "POST",
             headers,
             request.dict(),
@@ -172,7 +172,7 @@ class PineConeClient(ApiClient):
 
     async def query(self, request: PineconeVectorQuery):
         response = await self.fetch(
-            "https://llmtoolmvp-8360578.svc.us-central1-gcp.pinecone.io/query",
+            "https://langchain-8360578.svc.us-central1-gcp.pinecone.io/query",
             "POST",
             headers,
             request.dict(),
@@ -189,4 +189,4 @@ class PineConeClient(ApiClient):
         query_response = await self.query(query_)
         await self.upsert(upsert_)
         vector_models = query_response.matches
-        return [vector_model.metadata for vector_model in vector_models]
+        return {ctx.metadata["text"]: f"Score {ctx.score}" for ctx in vector_models}

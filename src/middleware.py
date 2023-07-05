@@ -31,22 +31,12 @@ def bootstrap():
         vector = (await openai.post_embeddings(request)).data[0].embedding
         ctx = await pinecone.get_context(
             namespace=request.namespace, vector=vector, text=request.input
-        )
-        r = await openai.retrieve_context(request)
-        if r is not None:
-            vres = await pinecone.query(
-                PineconeVectorQuery(
-                        namespace=r.namespace,
-                        vector=r.vector,
-            )
-            )
-            ctx = [v.metadata["text"] for v in vres.matches if v.metadata is not None]
-            
+        )            
         await pinecone.upsert(
             PineconeVectorUpsert(
                 namespace=request.namespace,
-                vectors=[PineconeVector(values=vector)],
-                metadata={"text": request.input},
+                vectors=[PineconeVector(values=vector, metadata={"text": request.input})],
+               
             )
         )
         req = OpenAIChatCompletionRequest(
@@ -71,8 +61,7 @@ def bootstrap():
         await pinecone.upsert(
             PineconeVectorUpsert(
                 namespace=request.namespace,
-                vectors=[PineconeVector(values=vector)],
-                metadata={"text": text},
+                vectors=[PineconeVector(values=vector, metadata={"text": text})],
             )
         )
         return PlainTextResponse(text)
@@ -91,8 +80,7 @@ def bootstrap():
                 pinecone.upsert(
                     PineconeVectorUpsert(
                         namespace=namespace,
-                        vectors=[PineconeVector(values=vector)],
-                        metadata={"text": page.content, "url": page.url},
+                        vectors=[PineconeVector(values=vector, metadata={"text": page.content})],
                     )
                 )
                 for page, vector in zip(pages, vectors)
