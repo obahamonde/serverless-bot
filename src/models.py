@@ -38,7 +38,7 @@ class User(FaunaModel):
     picture: Optional[str] = Field(default=None)
     sub: str = Field(..., unique=True)
     updated_at: Optional[str] = Field(default=None)
-    source: Literal["auth0", "github", "cognito"] = Field(default="auth0", index=True)
+ 
 
 
 class Upload(FaunaModel):
