@@ -16,8 +16,6 @@ from .typedefs import *
 def bootstrap():
     app = FastAPI()
 
-    
-
     @app.middleware("http")
     async def auth_middleware(request: Request, call_next: Callable) -> Response:
         token = request.headers.get("Authorization", None)

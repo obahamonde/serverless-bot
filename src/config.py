@@ -14,7 +14,10 @@ class Env(BaseSettings):
     OPENAI_API_KEY: str = Data(..., env="OPENAI_API_KEY")
     PINECONE_API_KEY: str = Data(..., env="PINECONE_API_KEY")
     PINECONE_API_URL: str = Data(..., env="PINECONE_API_URL")
-
+    AWS_ACCESS_KEY_ID: str = Data(..., env="AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY:str = Data(..., env="AWS_SECRET_ACCESS_KEY")
+    REGION_NAME:str = Data(..., env="REGION_NAME")
+    
     def __init__(self):
         super().__init__()
 

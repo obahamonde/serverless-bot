@@ -1,11 +1,12 @@
 import asyncio
 
 from fastapi import APIRouter
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from .openai import *
 from .pinecone import *
 from .tools.sitemap import SiteMapTool
+from .tools.sythesis import Polly
 
 pinecone = PineConeClient()
 openai = OpenAIClient()
@@ -73,3 +74,8 @@ async def ingest(namespace: str):
     return await asyncio.gather(
         *[pinecone.upsert(namespace, vector) for vector in vectors]
     )
+    
+@app.post("/audio")
+async def audio(text:str):
+    polly = Polly.from_text(text)
+    return StreamingResponse(polly.get_audio(), media_type="application/octet-stream")
