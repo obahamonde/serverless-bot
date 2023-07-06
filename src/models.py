@@ -62,15 +62,18 @@ class Upload(FaunaModel):
 
 
 class Lead(FaunaModel):
-    email: str = Field(...)
-    name: str = Field(...)
+    email: Optional[str] = Field(None)
+    name: Optional[str] = Field(None)
     phone: Optional[str] = Field(default=None)
     message: Optional[str] = Field(default=None)
     source: LeadSource = Field(default="website")
     status: LeadStatus = Field(default="new")
+    lead_id: str = Field(..., unique=True)
+    ipaddr : str = Field(..., index=True)
     attachments: Optional[List[Upload]] = Field(default=None)
     user: Optional[User] = Field(default=None)
-
+    visits: Optional[List[float]] = Field(default=None)
+    geo_data: Optional[dict] = Field(default=None)
 
 class Product(FaunaModel):
     name: str = Field(...)
