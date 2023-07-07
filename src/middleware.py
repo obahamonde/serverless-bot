@@ -9,16 +9,16 @@ from .handlers import *
 
 
 def bootstrap():
-    app = FastAPI()
+    app_ = FastAPI()
 
-    @app.middleware("http")
+    @app_.middleware("http")
     async def auth_middleware(request: Request, call_next: Callable) -> Response:
         token = request.headers.get("Authorization", None)
         request.state.token = token
         response = await call_next(request)
         return response
     
-    @app.middleware("http")
+    @app_.middleware("http")
     async def lead_gen_middleware(request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
         lead_id = request.cookies.get("lead_id", None)
@@ -44,13 +44,13 @@ def bootstrap():
         return response
     
 
-    app.include_router(api, prefix="/api")
-    app.mount("/", StaticFiles(directory="static",html=True), name="static")
-    app.add_middleware(
+    app_.include_router(api, prefix="/api")
+    app_.mount("/", StaticFiles(directory="static",html=True), name="static")
+    app_.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    return app
+    return app_
