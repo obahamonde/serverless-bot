@@ -1,17 +1,12 @@
 import asyncio
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from .apis import *
 from .tools import *
 
 api = APIRouter()
-
-
-@api.get("/sitemap")
-async def get_sitemap(url: str):
-    return await sitemap_tool.run(url)
 
 @api.post("/chatbot")
 async def main(request: OpenAIEmbeddingRequest):
@@ -63,14 +58,18 @@ async def get_embeddings(namespace: str):
     ]
     return vectors
 
-@api.get("/chatbot/ingest")
-async def ingest(namespace: str):
+async def ingest_data(namespace: str):
     vectors = await get_embeddings(namespace)
     data = await asyncio.gather(
         *[pinecone.upsert(namespace, vector) for vector in vectors]
     )
     return data
-    
+
+@app.get("/chatbot/ingest")
+async def ingest(background_tasks: BackgroundTasks, namespace: str):
+    background_tasks.add_task(ingest_data, namespace)
+    return {"message": "Ingestion started in the background"}
+  
 @api.post("/audio")
 async def audio(text:str):
     polly = Polly.from_text(text)
