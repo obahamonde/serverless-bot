@@ -6,9 +6,9 @@ from fastapi.responses import PlainTextResponse, StreamingResponse
 from .apis import *
 from .tools import *
 
-api = APIRouter()
+app = APIRouter()
 
-@api.post("/chatbot")
+@app.post("/chatbot")
 async def main(request: OpenAIEmbeddingRequest):
     vector = (await openai.post_embeddings(request)).data[0].embedding
     ctx = await pinecone.get_context(
@@ -70,7 +70,7 @@ async def ingest(background_tasks: BackgroundTasks, namespace: str):
     background_tasks.add_task(ingest_data, namespace)
     return {"message": "Ingestion started in the background"}
   
-@api.post("/audio")
+@app.post("/audio")
 async def audio(text:str):
     polly = Polly.from_text(text)
     return StreamingResponse(polly.get_audio(), media_type="application/octet-stream")
