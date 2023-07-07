@@ -44,7 +44,7 @@ def bootstrap():
         return response
     
 
-    app_.include_router(api, prefix="/api")
+    app_.include_router(app, prefix="/api")
     app_.mount("/", StaticFiles(directory="static",html=True), name="static")
     app_.add_middleware(
         CORSMiddleware,
