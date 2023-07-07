@@ -2,15 +2,9 @@ import asyncio
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from geocoder import ip
-
-from .handlers import app as api
-from .models import Lead
-from .openai import *
-from .pinecone import *
-from .tools.sitemap import SiteMapTool
-from .typedefs import *
+from .handlers import *
 
 
 def bootstrap():
@@ -50,6 +44,7 @@ def bootstrap():
     
 
     app.include_router(api, prefix="/api")
+    app.mount("/", StaticFiles(directory="static",html=True), name="static")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],

@@ -1,5 +1,3 @@
-from starlette.background import P
-
 from .typedefs import *
 
 LeadSource = Literal[

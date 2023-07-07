@@ -3,22 +3,18 @@ import asyncio
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse, StreamingResponse
 
-from .openai import *
-from .pinecone import *
-from .tools.sitemap import SiteMapTool
-from .tools.sythesis import Polly
-
-pinecone = PineConeClient()
-openai = OpenAIClient()
-tool = SiteMapTool()
-app = APIRouter()
+from .apis import *
+from .tools import *
 
 
-@app.get("/sitemap")
+api = APIRouter()
+
+
+@api.get("/sitemap")
 async def get_sitemap(url: str):
-    return await tool.run(url)
+    return await sitemap_tool.run(url)
 
-@app.post("/chatbot")
+@api.post("/chatbot")
 async def main(request: OpenAIEmbeddingRequest):
     vector = (await openai.post_embeddings(request)).data[0].embedding
     ctx = await pinecone.get_context(
@@ -53,7 +49,7 @@ async def main(request: OpenAIEmbeddingRequest):
     return PlainTextResponse(text)
 
 async def get_embeddings(namespace: str):
-    pages = await tool.run(namespace)
+    pages = await sitemap_tool.run(namespace)
     requests = [
         OpenAIEmbeddingRequest(input=page.content, namespace=namespace)
         for page in pages
@@ -68,14 +64,15 @@ async def get_embeddings(namespace: str):
     ]
     return vectors
 
-@app.get("/chatbot/ingest")
+@api.get("/chatbot/ingest")
 async def ingest(namespace: str):
     vectors = await get_embeddings(namespace)
-    return await asyncio.gather(
+    data = await asyncio.gather(
         *[pinecone.upsert(namespace, vector) for vector in vectors]
     )
+    return data
     
-@app.post("/audio")
+@api.post("/audio")
 async def audio(text:str):
     polly = Polly.from_text(text)
     return StreamingResponse(polly.get_audio(), media_type="application/octet-stream")
