@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from geocoder import ip
+
 from .handlers import *
 
 

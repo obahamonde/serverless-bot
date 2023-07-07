@@ -1,5 +1,4 @@
 from fastapi.responses import RedirectResponse
-
 from mangum import Mangum
 
 from src import app

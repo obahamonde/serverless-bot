@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 
-from src.lib import *
+from ..db import *
 
 T = TypeVar("T")
 Headers = Union[
